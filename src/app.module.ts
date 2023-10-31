@@ -10,16 +10,13 @@ import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
-    // MongooseModule.forRoot(
-    //   'mongodb+srv://thobui:Thanhtho96%40@fb.u6q1o5i.mongodb.net/?retryWrites=true&w=majority',
-    //   {
-    //     dbName: 'fb',
-    //   },
-    // ),
+    MongooseModule.forRoot('mongodb://localhost:27017', {
+      dbName: 'fb',
+    }),
     ScheduleModule.forRoot(),
     GatewayModules,
-    // UsersModule,
-    // AuthModule,
+    UsersModule,
+    AuthModule,
     JwtModule,
   ],
   controllers: [AppController],
