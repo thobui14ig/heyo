@@ -1,3 +1,4 @@
+import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { Cron } from '@nestjs/schedule';
 import {
@@ -7,8 +8,8 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import axios from 'axios';
 import * as dayjs from 'dayjs';
+import { lastValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 
 const ids = [
@@ -29,7 +30,10 @@ export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private i = 0;
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private readonly httpService: HttpService,
+  ) {}
 
   @WebSocketServer() server: Server;
 
@@ -50,11 +54,12 @@ export class AppGateway
     try {
       const apis = ids.map((id) => {
         const api = `https://graph.facebook.com/v18.0/${id}/feed?access_token=${tokens[0]}&fields=created_time,message,id,from&limit=5`;
-        return axios.get(api);
+        return this.httpService.get(api);
       });
 
-      const data = await Promise.all(apis);
-      const posts = data.map((items) => {
+      const data = (await Promise.all(apis)).map((item) => lastValueFrom(item));
+      const data1 = await Promise.all(data);
+      const posts = data1.map((items) => {
         const post = this.findLatestPost(items?.data?.data);
         return {
           ...post,
