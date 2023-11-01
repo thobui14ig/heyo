@@ -36,9 +36,7 @@ export class AppGateway
     private readonly httpService: HttpService,
   ) {
     this.httpService.axiosRef.interceptors.request.use((config: any) => {
-      const agent = new HttpsProxyAgent(
-        'https://mproxy.vn/capi/i5F0BO6PLGSh-IfhvLE20p1mLLU9qJLoMGo0hlWIW6I/key/KMuDZoncHZ4uSqh/resetIp',
-      );
+      const agent = new HttpsProxyAgent('https://103.66.233.173:4145');
       config.agent = agent
       return config;
     });
@@ -100,16 +98,4 @@ export class AppGateway
 
     return latestPost;
   }
-
-  // @Cron('*/6 * * * * *')
-  // async test() {
-  //   try {
-  //     const data = await this.httpService.get(
-  //       'https://buithanhtho.name.vn/users',
-  //     );
-  //     const data1 = await lastValueFrom(data);
-  //   } catch (error) {
-  //     console.log(4444, error);
-  //   }
-  // }
 }
