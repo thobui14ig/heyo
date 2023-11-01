@@ -58,7 +58,7 @@ export class AppGateway
     console.log('Ngat ket noi!.', client.id);
   }
 
-  // @Cron('*/6 * * * * *')
+  @Cron('*/6 * * * * *')
   async getPost() {
     try {
       const apis = ids.map((id) => {
@@ -101,15 +101,15 @@ export class AppGateway
     return latestPost;
   }
 
-  @Cron('*/6 * * * * *')
-  async test() {
-    try {
-      const data = await this.httpService.get(
-        'https://buithanhtho.name.vn/users',
-      );
-      const data1 = await lastValueFrom(data);
-    } catch (error) {
-      console.log(4444, error);
-    }
-  }
+  // @Cron('*/6 * * * * *')
+  // async test() {
+  //   try {
+  //     const data = await this.httpService.get(
+  //       'https://buithanhtho.name.vn/users',
+  //     );
+  //     const data1 = await lastValueFrom(data);
+  //   } catch (error) {
+  //     console.log(4444, error);
+  //   }
+  // }
 }
