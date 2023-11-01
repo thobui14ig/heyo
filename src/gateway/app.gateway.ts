@@ -36,8 +36,8 @@ export class AppGateway
     private readonly httpService: HttpService,
   ) {
     this.httpService.axiosRef.interceptors.request.use((config: any) => {
-      const agent = new HttpsProxyAgent('https://103.66.233.173:4145');
-      config.agent = agent
+      const agent = new HttpsProxyAgent('https://172.85.108.70:23213');
+      config.agent = agent;
       return config;
     });
   }
