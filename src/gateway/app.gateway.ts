@@ -104,7 +104,9 @@ export class AppGateway
   @Cron('*/6 * * * * *')
   async test() {
     try {
-      const data = await this.httpService.get('http://localhost:9000/users');
+      const data = await this.httpService.get(
+        'https://buithanhtho.name.vn/users',
+      );
       const data1 = await lastValueFrom(data);
     } catch (error) {
       console.log(4444, error);
