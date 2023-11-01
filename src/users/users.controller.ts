@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Ip,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,8 +22,10 @@ export class UsersController {
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Ip() ip: string) {
+    // return this.usersService.findAll();
+    console.log(99999999999, ip)
+    return 9;
   }
 
   @Get(':id')

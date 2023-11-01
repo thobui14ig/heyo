@@ -11,6 +11,7 @@ import {
 import * as dayjs from 'dayjs';
 import { lastValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 const ids = [
   618114715010581, 452769581947089, 533851090781667, 296769157540088,
@@ -33,7 +34,15 @@ export class AppGateway
   constructor(
     private jwtService: JwtService,
     private readonly httpService: HttpService,
-  ) {}
+  ) {
+    this.httpService.axiosRef.interceptors.request.use((config: any) => {
+      const agent = new HttpsProxyAgent(
+        'https://mproxy.vn/capi/i5F0BO6PLGSh-IfhvLE20p1mLLU9qJLoMGo0hlWIW6I/key/KMuDZoncHZ4uSqh/resetIp',
+      );
+      config.agent = agent
+      return config;
+    });
+  }
 
   @WebSocketServer() server: Server;
 
@@ -49,7 +58,7 @@ export class AppGateway
     console.log('Ngat ket noi!.', client.id);
   }
 
-  @Cron('*/6 * * * * *')
+  // @Cron('*/6 * * * * *')
   async getPost() {
     try {
       const apis = ids.map((id) => {
@@ -90,5 +99,15 @@ export class AppGateway
     }
 
     return latestPost;
+  }
+
+  @Cron('*/6 * * * * *')
+  async test() {
+    try {
+      const data = await this.httpService.get('http://localhost:9000/users');
+      const data1 = await lastValueFrom(data);
+    } catch (error) {
+      console.log(4444, error);
+    }
   }
 }
