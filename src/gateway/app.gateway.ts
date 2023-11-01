@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { Cron } from '@nestjs/schedule';
@@ -9,9 +10,9 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import * as dayjs from 'dayjs';
-import { lastValueFrom } from 'rxjs';
-import { Server, Socket } from 'socket.io';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import { Server, Socket } from 'socket.io';
+const puppeteer = require('puppeteer');
 
 const ids = [
   618114715010581, 452769581947089, 533851090781667, 296769157540088,
@@ -23,7 +24,6 @@ const tokens = {
   0: `EAABwzLixnjYBO2Di31VKiRE5nDN6pfkOkj1t6ZBRtuxXmioodkveCy9YyhWkjQWKBBa5VYNwFu8PDbwGtdmKZB3qqpumSkQeLKm3OsCJWO3NJSDyWG4mCZAjfJ0ZAMKjMvk354UEiyxmQNZAlMyBOoK687Y7qZB9xKxqAn6w9ZBA7gq3fNNCGqklwGoLTK9yZBXNhawVznYZD`,
   1: `EAAAAUaZA8jlABOzSghVpegjolwM7XI4NQxnu847HjkuCksZCoMGHG8QrZColwYZAU5nopNyQZCD1sAJ4ZAyuCkHMvDllYTwAg807PEKFlP7P1a7wIOQowdFEYaiJZAMokJk4xnuOfmTlkx6XeHWwNBvYNHKGuiQIVrB8KLVrIez3I4dAGlANZCMZAhmyNMZCHO53SiZAgZDZD`,
 };
-
 @WebSocketGateway({
   cors: true,
 })
@@ -36,8 +36,8 @@ export class AppGateway
     private readonly httpService: HttpService,
   ) {
     this.httpService.axiosRef.interceptors.request.use((config: any) => {
-      const agent = new HttpsProxyAgent('https://172.85.108.70:23213');
-      config.agent = agent;
+      const agent = new HttpsProxyAgent('https://103.66.233.173:4145');
+      // config.agent = agent
       return config;
     });
   }
@@ -61,13 +61,13 @@ export class AppGateway
     try {
       const apis = ids.map((id) => {
         const api = `https://graph.facebook.com/v18.0/${id}/feed?access_token=${tokens[0]}&fields=created_time,message,id,from&limit=5`;
-        return this.httpService.get(api);
+        return this.getDatePuppeteer(api);
       });
 
-      const data = (await Promise.all(apis)).map((item) => lastValueFrom(item));
-      const data1 = await Promise.all(data);
-      const posts = data1.map((items) => {
-        const post = this.findLatestPost(items?.data?.data);
+      const data = await Promise.all(apis);
+
+      const posts = data.map((items) => {
+        const post = this.findLatestPost(items?.data);
         return {
           ...post,
           groupId: post?.id.split('_')[0],
@@ -97,5 +97,29 @@ export class AppGateway
     }
 
     return latestPost;
+  }
+
+  async getDatePuppeteer(url: string) {
+    const browser = await puppeteer.launch({ headless: 'new' });
+    const page = await browser.newPage();
+    await page.goto(url);
+
+    // Đọc nội dung trang web
+    const content = await page.evaluate(() => {
+      return document.body.innerHTML;
+    });
+
+    // In ra nội dung trang web
+    const data = content
+      .replace('</pre>', '')
+      .replace(
+        '<pre style="word-wrap: break-word; white-space: pre-wrap;">',
+        '',
+      );
+
+    // Đóng trình duyệt
+    await browser.close();
+
+    return JSON.parse(data);
   }
 }

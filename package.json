@@ -33,6 +33,8 @@
     "dayjs": "^1.11.10",
     "https-proxy-agent": "^7.0.2",
     "mongoose": "^7.6.3",
+    "puppeteer": "^21.4.1",
+    "puppeteer-core": "^21.4.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },
