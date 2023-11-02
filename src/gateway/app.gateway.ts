@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { HttpService } from '@nestjs/axios';
-import { JwtService } from '@nestjs/jwt';
 import { Cron } from '@nestjs/schedule';
 import {
   OnGatewayConnection,
@@ -10,7 +8,6 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import * as dayjs from 'dayjs';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 import { Server, Socket } from 'socket.io';
 const puppeteer = require('puppeteer');
 
@@ -30,17 +27,7 @@ const tokens = {
 export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  private i = 0;
-  constructor(
-    private jwtService: JwtService,
-    private readonly httpService: HttpService,
-  ) {
-    this.httpService.axiosRef.interceptors.request.use((config: any) => {
-      const agent = new HttpsProxyAgent('https://103.66.233.173:4145');
-      // config.agent = agent
-      return config;
-    });
-  }
+  private browser = null;
 
   @WebSocketServer() server: Server;
 
@@ -100,7 +87,7 @@ export class AppGateway
   }
 
   async getDatePuppeteer(url: string) {
-    const browser = await puppeteer.launch({ headless: 'new' });
+    const browser = await this.getBrowser();
     const page = await browser.newPage();
     await page.goto(url);
 
@@ -117,9 +104,15 @@ export class AppGateway
         '',
       );
 
-    // Đóng trình duyệt
-    await browser.close();
-
     return JSON.parse(data);
+  }
+
+  async getBrowser() {
+    if (!this.browser) {
+      const browser = await puppeteer.launch({ headless: 'new' });
+      this.browser = browser;
+    }
+
+    return this.browser;
   }
 }
