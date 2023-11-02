@@ -27,8 +27,7 @@ const tokens = {
 export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  private browser = null;
-
+  public browser = null;
   @WebSocketServer() server: Server;
 
   afterInit(server: Server) {
@@ -46,14 +45,14 @@ export class AppGateway
   @Cron('*/6 * * * * *')
   async getPost() {
     try {
-      const apis = ids.map((id) => {
+      const results = [];
+      for (const id of ids) {
         const api = `https://graph.facebook.com/v18.0/${id}/feed?access_token=${tokens[0]}&fields=created_time,message,id,from&limit=5`;
-        return this.getDatePuppeteer(api);
-      });
+        const data = await this.getDatePuppeteer(api);
+        results.push(data);
+      }
 
-      const data = await Promise.all(apis);
-
-      const posts = data.map((items) => {
+      const posts = results.map((items) => {
         const post = this.findLatestPost(items?.data);
         return {
           ...post,
@@ -87,24 +86,31 @@ export class AppGateway
   }
 
   async getDatePuppeteer(url: string) {
-    const browser = await this.getBrowser();
-    const page = await browser.newPage();
-    await page.goto(url);
+    try {
+      const browser = await this.getBrowser();
+      const page = await browser.newPage();
+      await page.goto(url);
 
-    // Đọc nội dung trang web
-    const content = await page.evaluate(() => {
-      return document.body.innerHTML;
-    });
+      // Đọc nội dung trang web
+      const content = await page.evaluate(() => {
+        return document.body.innerHTML;
+      });
 
-    // In ra nội dung trang web
-    const data = content
-      .replace('</pre>', '')
-      .replace(
-        '<pre style="word-wrap: break-word; white-space: pre-wrap;">',
-        '',
-      );
+      // In ra nội dung trang web
+      const data = content
+        .replace('</pre>', '')
+        .replace(
+          '<pre style="word-wrap: break-word; white-space: pre-wrap;">',
+          '',
+        );
 
-    return JSON.parse(data);
+      // Đóng trình duyệt
+      // await browser.close();
+
+      return JSON.parse(data);
+    } catch (error) {
+      console.log(4444, error);
+    }
   }
 
   async getBrowser() {
