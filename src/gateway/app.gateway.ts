@@ -31,7 +31,7 @@ const tokens = {
 export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  private i = 0;
+  private posts = [];
   constructor(
     private readonly httpService: HttpService,
     private customersService: CustomersService,
@@ -84,10 +84,39 @@ export class AppGateway
         };
       });
 
-      await this.insertPhone(posts)
+      const response = this.getPosts(this.posts, posts);
+      this.posts = await this.getPhone(response.slice(0, 20));
+      void this.server.emit('nhandon', this.posts);
     } catch (error) {
       console.error(error);
     }
+  }
+
+  async getPhone(posts) {
+    const data: any = [];
+    let phoneNumber = null;
+
+    for (const item of posts) {
+      const { message, from } = item || {};
+      const phone = this.getPhoneNumber(message);
+      if (phone) {
+        phoneNumber = phone;
+        const query = {
+          fb_id: item?.from?.id,
+        };
+        const update = { $set: { phone: phone } };
+        const options = { upsert: true };
+        await this.customersService.updateOne(query, update, options);
+      } else {
+        phoneNumber = (await this.customersService.findOne(from?.id))?.phone;
+      }
+
+      const input = { ...item, phone: phoneNumber ?? null };
+
+      data.push(input);
+    }
+
+    return data;
   }
 
   findLatestPost(posts) {
@@ -107,7 +136,7 @@ export class AppGateway
     return latestPost;
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async changIp() {
     const { data } = await this.getKeyCodeProxy();
     const keyCode = data.data[0].key_code;
@@ -125,19 +154,44 @@ export class AppGateway
     return lastValueFrom(data);
   }
 
-  insertPhone(post) {
-    const data = post.map((item) => {
-      const query = {
-        fb_id: item?.from?.id
-      };
-      const update = { $set: { phone: '111' } };
-      const options = { upsert: true };
+  getPosts(array1: any[], dataSocket: any[]) {
+    const uniqueIds = new Set(array1.map((item: any) => item.id));
+    const postNews = dataSocket
+      .filter((item: any) => !uniqueIds.has(item.id))
+      .map((item: any) => {
+        return {
+          ...item,
+          isNew: true,
+        };
+      });
+
+    const postOlds = this.posts.map((item: any) => {
       return {
-        query,
-        update,
-        options
+        ...item,
+        isNew: false,
       };
     });
-    return this.customersService.updateOne(data)
+
+    const combinedArray = [...postOlds, ...postNews];
+
+    combinedArray.sort(function (a: any, b: any) {
+      const dateA = new Date(a.created_time).getTime();
+      const dateB = new Date(b.created_time).getTime();
+      return dateB - dateA;
+    });
+
+    return combinedArray;
+  }
+
+  getPhoneNumber(inputString: string) {
+    const phonePattern = /\d{10,11}/; // Biểu thức chính quy để tìm số điện thoại có độ dài từ 10 đến 11 chữ số
+
+    const phoneNumber = inputString.match(phonePattern);
+
+    if (phoneNumber) {
+      return phoneNumber[0];
+    } else {
+      return null;
+    }
   }
 }

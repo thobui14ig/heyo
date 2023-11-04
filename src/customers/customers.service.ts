@@ -21,15 +21,12 @@ export class CustomersService {
     return `This action returns all customers`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} customer`;
+  findOne(fb_id: number) {
+    return this.customersModel.findOne({ fb_id });
   }
 
-  async updateOne(options) {
-    for (const option of options) {
-      const { options, update, query } = option
-      await this.customersModel.updateOne(query, update, options);
-    }
+  async updateOne(query, update, options) {
+    return this.customersModel.updateOne(query, update, options);
   }
 
   remove(id: number) {
