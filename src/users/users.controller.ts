@@ -23,9 +23,7 @@ export class UsersController {
 
   @Get()
   findAll(@Ip() ip: string) {
-    // return this.usersService.findAll();
-    console.log(99999999999, ip)
-    return 9;
+    return this.usersService.findAll();
   }
 
   @Get(':id')

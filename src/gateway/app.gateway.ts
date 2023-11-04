@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-import { Cron } from '@nestjs/schedule';
+import { HttpService } from '@nestjs/axios';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -7,9 +7,11 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import * as dayjs from 'dayjs';
+import { lastValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
-const puppeteer = require('puppeteer');
+import * as dayjs from 'dayjs';
+
+const tokenProxy = `i5F0BO6PLGSh-IfhvLE20p1mLLU9qJLoMGo0hlWIW6I`;
 
 const ids = [
   618114715010581, 452769581947089, 533851090781667, 296769157540088,
@@ -21,13 +23,30 @@ const tokens = {
   0: `EAABwzLixnjYBO2Di31VKiRE5nDN6pfkOkj1t6ZBRtuxXmioodkveCy9YyhWkjQWKBBa5VYNwFu8PDbwGtdmKZB3qqpumSkQeLKm3OsCJWO3NJSDyWG4mCZAjfJ0ZAMKjMvk354UEiyxmQNZAlMyBOoK687Y7qZB9xKxqAn6w9ZBA7gq3fNNCGqklwGoLTK9yZBXNhawVznYZD`,
   1: `EAAAAUaZA8jlABOzSghVpegjolwM7XI4NQxnu847HjkuCksZCoMGHG8QrZColwYZAU5nopNyQZCD1sAJ4ZAyuCkHMvDllYTwAg807PEKFlP7P1a7wIOQowdFEYaiJZAMokJk4xnuOfmTlkx6XeHWwNBvYNHKGuiQIVrB8KLVrIez3I4dAGlANZCMZAhmyNMZCHO53SiZAgZDZD`,
 };
+
 @WebSocketGateway({
   cors: true,
 })
 export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  public browser = null;
+  private i = 0;
+  constructor(private readonly httpService: HttpService) {
+    this.httpService.axiosRef.interceptors.request.use((config: any) => {
+      config.proxy = {
+        protocol: 'http',
+        host: 'ip.mproxy.vn',
+        port: 12340,
+        auth: {
+          username: 'thobui',
+          password: 'KMuDZoncHZ4uSqh',
+        },
+      };
+
+      return config;
+    });
+  }
+
   @WebSocketServer() server: Server;
 
   afterInit(server: Server) {
@@ -45,15 +64,14 @@ export class AppGateway
   @Cron('*/6 * * * * *')
   async getPost() {
     try {
-      const results = [];
-      for (const id of ids) {
+      const apis = ids.map((id) => {
         const api = `https://graph.facebook.com/v18.0/${id}/feed?access_token=${tokens[0]}&fields=created_time,message,id,from&limit=5`;
-        const data = await this.getDatePuppeteer(api);
-        results.push(data);
-      }
-
-      const posts = results.map((items) => {
-        const post = this.findLatestPost(items?.data);
+        return this.httpService.get(api);
+      });
+      const data = (await Promise.all(apis)).map((item) => lastValueFrom(item));
+      const data1 = await Promise.all(data);
+      const posts = data1.map((items) => {
+        const post = this.findLatestPost(items?.data?.data);
         return {
           ...post,
           groupId: post?.id.split('_')[0],
@@ -85,40 +103,21 @@ export class AppGateway
     return latestPost;
   }
 
-  async getDatePuppeteer(url: string) {
-    try {
-      const browser = await this.getBrowser();
-      const page = await browser.newPage();
-      await page.goto(url);
+  @Cron(CronExpression.EVERY_MINUTE)
+  async changIp() {
+    const { data } = await this.getKeyCodeProxy();
+    const keyCode = data.data[0].key_code;
 
-      // Đọc nội dung trang web
-      const content = await page.evaluate(() => {
-        return document.body.innerHTML;
-      });
-
-      // In ra nội dung trang web
-      const data = content
-        .replace('</pre>', '')
-        .replace(
-          '<pre style="word-wrap: break-word; white-space: pre-wrap;">',
-          '',
-        );
-
-      // Đóng trình duyệt
-      // await browser.close();
-
-      return JSON.parse(data);
-    } catch (error) {
-      console.log(4444, error);
-    }
+    return this.httpService.get(
+      `https://mproxy.vn/capi/${tokenProxy}/key/${keyCode}/resetIp`,
+    );
   }
 
-  async getBrowser() {
-    if (!this.browser) {
-      const browser = await puppeteer.launch({ headless: 'new' });
-      this.browser = browser;
-    }
+  async getKeyCodeProxy() {
+    const data = await this.httpService.get(
+      `https://mproxy.vn/capi/${tokenProxy}/keys`,
+    );
 
-    return this.browser;
+    return lastValueFrom(data);
   }
 }
