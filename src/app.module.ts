@@ -11,12 +11,15 @@ import { CustomersModule } from './customers/customers.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot(
-      'mongodb+srv://thobui:Thanhtho96%40@atlascluster.fhbmxng.mongodb.net/',
-      {
-        dbName: 'fb'
-      }
-    ),
+    // MongooseModule.forRoot(
+    //   'mongodb+srv://thobui:Thanhtho96%40@atlascluster.fhbmxng.mongodb.net/',
+    //   {
+    //     dbName: 'fb'
+    //   }
+    // ),
+    MongooseModule.forRoot('mongodb://localhost:27017', {
+      dbName: 'fb',
+    }),
     ScheduleModule.forRoot(),
     GatewayModules,
     UsersModule,
