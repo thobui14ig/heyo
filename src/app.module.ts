@@ -7,17 +7,22 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
+import { CustomersModule } from './customers/customers.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://localhost:27017', {
-      dbName: 'fb',
-    }),
+    MongooseModule.forRoot(
+      'mongodb+srv://thobui:Thanhtho96%40@atlascluster.fhbmxng.mongodb.net/',
+      {
+        dbName: 'fb'
+      }
+    ),
     ScheduleModule.forRoot(),
     GatewayModules,
     UsersModule,
     AuthModule,
     JwtModule,
+    CustomersModule
   ],
   controllers: [AppController],
   providers: [AppService],

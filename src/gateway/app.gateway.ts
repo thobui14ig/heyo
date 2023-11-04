@@ -10,6 +10,7 @@ import {
 import { lastValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import * as dayjs from 'dayjs';
+import { CustomersService } from 'src/customers/customers.service';
 
 const tokenProxy = `i5F0BO6PLGSh-IfhvLE20p1mLLU9qJLoMGo0hlWIW6I`;
 
@@ -31,7 +32,10 @@ export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private i = 0;
-  constructor(private readonly httpService: HttpService) {
+  constructor(
+    private readonly httpService: HttpService,
+    private customersService: CustomersService,
+  ) {
     this.httpService.axiosRef.interceptors.request.use((config: any) => {
       config.proxy = {
         protocol: 'http',
@@ -80,7 +84,7 @@ export class AppGateway
         };
       });
 
-      void this.server.emit('nhandon', posts);
+      await this.insertPhone(posts)
     } catch (error) {
       console.error(error);
     }
@@ -119,5 +123,21 @@ export class AppGateway
     );
 
     return lastValueFrom(data);
+  }
+
+  insertPhone(post) {
+    const data = post.map((item) => {
+      const query = {
+        fb_id: item?.from?.id
+      };
+      const update = { $set: { phone: '111' } };
+      const options = { upsert: true };
+      return {
+        query,
+        update,
+        options
+      };
+    });
+    return this.customersService.updateOne(data)
   }
 }
