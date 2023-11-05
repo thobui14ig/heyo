@@ -69,7 +69,7 @@ export class AppGateway
   async getPost() {
     try {
       const apis = ids.map((id) => {
-        const api = `https://graph.facebook.com/v18.0/${id}/feed?access_token=${tokens[0]}&fields=created_time,message,id,from&limit=5`;
+        const api = `https://graph.facebook.com/v18.0/${id}/feed?access_token=${tokens[1]}&fields=created_time,message,id,from&limit=5`;
         return this.httpService.get(api);
       });
       const data = (await Promise.all(apis)).map((item) => lastValueFrom(item));
