@@ -37,6 +37,7 @@ export class AppGateway
 {
   private posts = [];
   private browser = null;
+  private browser1 = null;
   private isLogin = false;
   constructor(
     private readonly httpService: HttpService,
@@ -186,7 +187,7 @@ export class AppGateway
   }
 
   async getDatePuppeteer() {
-    const browser = await this.getBrowser();
+    const browser = await this.getBrowser1();
     const page = await browser.newPage();
     await page.goto(
       `https://www.facebook.com/groups/shipperdanang?sorting_setting=CHRONOLOGICAL`,
@@ -221,6 +222,15 @@ export class AppGateway
     }
 
     return this.browser;
+  }
+
+  async getBrowser1() {
+    if (!this.browser1) {
+      const browser1 = await puppeteer.launch({ headless: 'new' });
+      this.browser1 = browser1;
+    }
+
+    return this.browser1;
   }
 
   async loginFacebook() {
