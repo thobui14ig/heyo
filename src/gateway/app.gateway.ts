@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { HttpService } from '@nestjs/axios';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
@@ -11,6 +12,9 @@ import { lastValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import * as dayjs from 'dayjs';
 import { CustomersService } from 'src/customers/customers.service';
+import puppeteer from 'puppeteer';
+const fs = require('fs');
+const { JSDOM } = require('jsdom');
 
 const tokenProxy = `i5F0BO6PLGSh-IfhvLE20p1mLLU9qJLoMGo0hlWIW6I`;
 
@@ -32,6 +36,8 @@ export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private posts = [];
+  private browser = null;
+  private isLogin = false;
   constructor(
     private readonly httpService: HttpService,
     private customersService: CustomersService,
@@ -68,27 +74,11 @@ export class AppGateway
   @Cron('*/6 * * * * *')
   async getPost() {
     try {
-      const apis = ids.map((id) => {
-        const api = `https://graph.facebook.com/v18.0/${id}/feed?access_token=${tokens[1]}&fields=created_time,message,id,from&limit=5`;
-        return this.httpService.get(api);
-      });
-      const data = (await Promise.all(apis)).map((item) => lastValueFrom(item));
-      const data1 = await Promise.all(data);
-      const posts = data1.map((items) => {
-        const post = this.findLatestPost(items?.data?.data);
-        return {
-          ...post,
-          groupId: post?.id.split('_')[0],
-          postId: post?.id.split('_')[1],
-          created_time: dayjs(post?.created_time).format('YYYY-MM-DD HH:mm:ss'),
-        };
-      });
-
-      const response = this.getPosts(this.posts, posts);
-      this.posts = await this.getPhone(response.slice(0, 20));
-      void this.server.emit('nhandon', this.posts);
+      await this.loginFacebook();
+      await this.getDatePuppeteer();
+      console.log(1111);
     } catch (error) {
-      console.error(error);
+      console.log(222, error);
     }
   }
 
@@ -193,5 +183,116 @@ export class AppGateway
     } else {
       return null;
     }
+  }
+
+  async getDatePuppeteer() {
+    const browser = await this.getBrowser();
+    const page = await browser.newPage();
+    await page.goto(
+      `https://www.facebook.com/groups/shipperdanang?sorting_setting=CHRONOLOGICAL`,
+    );
+
+    // Đọc nội dung trang web
+    const content = await page.evaluate(() => {
+      return document.body.innerHTML;
+    });
+
+    const duongDan = '123.txt';
+
+    // Sử dụng phương thức writeFile để ghi chuỗi vào tệp tin
+    // fs.writeFile(duongDan, content, (err) => {
+    //   if (err) {
+    //     console.error('Lỗi khi ghi tệp tin:', err);
+    //   }
+    // });
+    await page.close();
+    const ten = this.getTen(content);
+    const postId = this.getPostId(content);
+    await this.getNoiDung(content);
+    console.log(2222, { ten: ten, postId: postId });
+
+    return content;
+  }
+
+  async getBrowser() {
+    if (!this.browser) {
+      const browser = await puppeteer.launch({ headless: false });
+      this.browser = browser;
+    }
+
+    return this.browser;
+  }
+
+  async loginFacebook() {
+    console.log(999, this.isLogin);
+    if (!this.isLogin) {
+      this.isLogin = true;
+      const browser = await this.getBrowser();
+      const page = await browser.newPage();
+
+      // Navigate to Facebook's login page
+      await page.goto('https://www.facebook.com/');
+
+      // Enter your email/phone and password
+      await page.type('#email', '0822423246');
+      await page.type('#pass', 'Thitanh98@');
+
+      // Click the login button
+      await page.click('button[name="login"]');
+
+      // Wait for the login to complete (you may need to adjust the selector and wait time)
+      await page.waitForSelector('YOUR_LOGGED_IN_USER_SELECTOR');
+      await page.close();
+    }
+  }
+
+  getTen(inputString) {
+    // Biểu thức chính quy để trích xuất giá trị nằm trong cặp chuỗi <strong><span> và </span></strong>
+    const regex = /<strong><span>(.*?)<\/span><\/strong>/;
+
+    // Sử dụng phương thức match() để tìm các kết quả khớp với biểu thức chính quy
+    const matches = inputString.match(regex);
+
+    if (matches && matches.length > 1) {
+      // Giá trị bạn cần nằm ở trong matches[1]
+      const extractedValue = matches[1];
+      return extractedValue;
+    } else {
+      return null;
+    }
+  }
+
+  getPostId(inputString) {
+    // Biểu thức chính quy để trích xuất giá trị của "post_id"
+    const regex = /"post_id":"(\d+)"/;
+
+    // Sử dụng phương thức match() để tìm các kết quả khớp với biểu thức chính quy
+    const matches = inputString.match(regex);
+
+    if (matches && matches.length > 1) {
+      // Giá trị "post_id" bạn cần nằm ở trong matches[1]
+      const postIdValue = matches[1];
+      return postIdValue;
+    } else {
+      return null;
+    }
+  }
+
+  getNoiDung(inputString) {
+
+    // Tạo một DOMParser để phân tích chuỗi HTML thành cây DOM ảo
+    const dom1 = new JSDOM(inputString);
+
+    // Sử dụng document của dom1 và dom2 để tìm các phần tử theo lớp CSS
+    const elements1 = dom1.window.document.querySelectorAll(
+      '.xdj266r.x11i5rnm.xat24cr.x1mh8g0r.x1vvkbs',
+    );
+
+
+    // Lấy nội dung bên trong các phần tử tìm thấy
+    const content1 = elements1[0]?.textContent;
+
+
+    console.log(22222, content1); // In ra "Xin chào" từ chuỗi str1
   }
 }
