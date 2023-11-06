@@ -217,7 +217,12 @@ export class AppGateway
 
   async getBrowser() {
     if (!this.browser) {
-      const browser = await puppeteer.launch({ headless: false });
+      const browser = await puppeteer.launch({
+        headless: false,
+        env: {
+          DISPLAY: ':10.0',
+        },
+      });
       this.browser = browser;
     }
 
@@ -289,7 +294,6 @@ export class AppGateway
   }
 
   getNoiDung(inputString) {
-
     // Tạo một DOMParser để phân tích chuỗi HTML thành cây DOM ảo
     const dom1 = new JSDOM(inputString);
 
@@ -298,10 +302,8 @@ export class AppGateway
       '.xdj266r.x11i5rnm.xat24cr.x1mh8g0r.x1vvkbs',
     );
 
-
     // Lấy nội dung bên trong các phần tử tìm thấy
     const content1 = elements1[0]?.textContent;
-
 
     console.log(22222, content1); // In ra "Xin chào" từ chuỗi str1
   }
