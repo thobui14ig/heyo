@@ -25,7 +25,7 @@ import { CustomersModule } from './customers/customers.module';
     UsersModule,
     AuthModule,
     JwtModule,
-    CustomersModule
+    CustomersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

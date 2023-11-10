@@ -21,7 +21,7 @@ export class CustomersService {
     return `This action returns all customers`;
   }
 
-  findOne(fb_id: number) {
+  findOne(fb_id: string) {
     return this.customersModel.findOne({ fb_id });
   }
 
