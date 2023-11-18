@@ -108,7 +108,7 @@ export class AppGateway
       }
 
       this.posts.push(payload);
-      console.log(this.posts);
+      void this.server.emit('nhandon', this.posts.reverse());
     }
   }
 }
