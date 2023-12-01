@@ -17,15 +17,15 @@ import { CustomersModule } from './customers/customers.module';
     //     dbName: 'fb'
     //   }
     // ),
-    MongooseModule.forRoot('mongodb://localhost:27017', {
-      dbName: 'fb',
-    }),
-    ScheduleModule.forRoot(),
-    GatewayModules,
-    UsersModule,
-    AuthModule,
-    JwtModule,
-    CustomersModule,
+    // MongooseModule.forRoot('mongodb://localhost:27017', {
+    //   dbName: 'fb',
+    // }),
+    // ScheduleModule.forRoot(),
+    // GatewayModules,
+    // UsersModule,
+    // AuthModule,
+    // JwtModule,
+    // CustomersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
